@@ -261,6 +261,7 @@ func NewRouter(params RouterParams) *gin.Engine {
 		RegisterMyInvitationRoutes(v1, params.TenantInvitationHandler)
 		RegisterKnowledgeBaseRoutes(v1, params.KBHandler, rbacGuards)
 		RegisterImageAttrRoutes(v1, params.KBHandler, rbacGuards)
+		RegisterWikiTaxonomyRoutes(v1, params.KBHandler, rbacGuards) // [wiki-taxonomy-ext]
 		RegisterKnowledgeBaseActivityRoutes(v1, params.AuditLogHandler, rbacGuards)
 		// KB-scoped image proxy: lets tenants render images embedded in
 		// org-shared / agent-visible KB content, which the tenant-scoped

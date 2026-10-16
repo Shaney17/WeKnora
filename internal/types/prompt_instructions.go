@@ -67,7 +67,10 @@ func ValidateKnowledgeBasePromptInstructions(kb *KnowledgeBase) error {
 	if kb.ExtractConfig != nil {
 		fields["graph extraction instructions"] = kb.ExtractConfig.CustomInstructions
 	}
-	return validatePromptInstructionFields(fields)
+	if err := validatePromptInstructionFields(fields); err != nil {
+		return err
+	}
+	return ValidateWikiTaxonomy(kb.WikiConfig) // [wiki-taxonomy-ext]
 }
 
 // ValidateEffectiveProcessPromptInstructions checks length limits on the

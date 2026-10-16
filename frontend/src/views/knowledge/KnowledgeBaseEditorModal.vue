@@ -124,6 +124,10 @@
               />
             </div>
 
+            <div v-if="!isFAQ && formData.indexingStrategy.wikiEnabled" class="form-item">
+              <WikiTaxonomySettings :wiki-config="formData.wikiConfig" /> <!-- [wiki-taxonomy-ext] -->
+            </div>
+
             <div class="form-item" data-guide="kb-create-name">
               <label class="form-label required">{{ $t('knowledgeEditor.basic.nameLabel') }}</label>
               <t-input
@@ -600,6 +604,7 @@ import KBStorageSettings from './settings/KBStorageSettings.vue'
 import KBChunkingSettings from './settings/KBChunkingSettings.vue'
 import KBVectorStoreSettings from './settings/KBVectorStoreSettings.vue'
 import KBAdvancedSettings from './settings/KBAdvancedSettings.vue'
+import { WikiTaxonomySettings, wikiTaxonomyDefaults, wikiTaxonomyFromKb, wikiTaxonomyPayload, adoptLegacyTaxonomyPreset } from '@/extensions/wikiTaxonomy' // [wiki-taxonomy-ext]
 import ModelSelector from '@/components/ModelSelector.vue'
 import GraphSettings from './settings/GraphSettings.vue'
 import KBShareSettings from './settings/KBShareSettings.vue'
@@ -953,6 +958,7 @@ const initFormData = (type: 'document' | 'faq' = 'document') => {
       extractionGranularity: 'standard' as 'focused' | 'standard' | 'exhaustive',
       contentInstructions: '',
       extractionInstructions: '',
+      ...wikiTaxonomyDefaults(), // [wiki-taxonomy-ext]
     },
     indexingStrategy: {
       vectorEnabled: true,
@@ -1112,6 +1118,7 @@ const loadKBData = async (
         ) as 'focused' | 'standard' | 'exhaustive',
         contentInstructions: kb.wiki_config?.content_instructions || '',
         extractionInstructions: kb.wiki_config?.extraction_instructions || '',
+        ...wikiTaxonomyFromKb(kb.wiki_config), // [wiki-taxonomy-ext]
       },
       indexingStrategy: {
         vectorEnabled: kb.indexing_strategy?.vector_enabled ?? true,
@@ -1133,6 +1140,7 @@ const loadKBData = async (
         status: kb.vector_store_status,
       },
     }
+    await adoptLegacyTaxonomyPreset(formData.value.wikiConfig) // [wiki-taxonomy-ext]
     // 拉取后端属性注册表，驱动属性面板的动态渲染（编辑模式有 kbId）。
     loadImageAttrSchema(kbId)
     initialStorageProvider.value = formData.value.storageProvider
@@ -1533,6 +1541,7 @@ const buildSubmitData = () => {
       extraction_granularity: formData.value.wikiConfig?.extractionGranularity || 'standard',
       content_instructions: formData.value.wikiConfig?.contentInstructions || '',
       extraction_instructions: formData.value.wikiConfig?.extractionInstructions || '',
+      ...wikiTaxonomyPayload(formData.value.wikiConfig), // [wiki-taxonomy-ext]
     }
   }
 
@@ -1638,6 +1647,7 @@ const doSubmit = async () => {
           extraction_granularity: formData.value.wikiConfig.extractionGranularity || 'standard',
           content_instructions: formData.value.wikiConfig.contentInstructions || '',
           extraction_instructions: formData.value.wikiConfig.extractionInstructions || '',
+          ...wikiTaxonomyPayload(formData.value.wikiConfig), // [wiki-taxonomy-ext]
         }
       }
       if (formData.value.type !== 'faq') {

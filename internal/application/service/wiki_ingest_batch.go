@@ -2013,6 +2013,7 @@ func (s *wikiIngestService) reduceSlugUpdates(
 		// and got converted to a summary page.
 		page.ChunkRefs = types.StringArray{}
 		changed = true
+		applyPlannedFolder(page, batchCtx, slug) // [wiki-taxonomy-ext] file the summary on the template's summary shelf
 
 		if exists {
 			_, err = s.wikiService.UpdatePage(ctx, page)

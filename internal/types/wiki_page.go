@@ -522,6 +522,7 @@ func (g WikiExtractionGranularity) Normalize() WikiExtractionGranularity {
 // Whether the wiki feature is turned on is controlled by IndexingStrategy.WikiEnabled;
 // this struct only carries wiki-specific tunables.
 type WikiConfig struct {
+	WikiTaxonomyConfig `yaml:",inline"` // [wiki-taxonomy-ext] folder-layout extension, see docs/extensions/wiki-taxonomy.md
 	// SynthesisModelID is the LLM model ID used for wiki page generation and updates
 	SynthesisModelID string `yaml:"synthesis_model_id" json:"synthesis_model_id"`
 	// MaxPagesPerIngest limits pages created/updated per ingest operation (0 = no limit)

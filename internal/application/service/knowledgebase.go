@@ -609,7 +609,7 @@ func (s *knowledgeBaseService) UpdateKnowledgeBase(ctx context.Context,
 			kb.FAQConfig = config.FAQConfig
 		}
 		if config.WikiConfig != nil {
-			kb.WikiConfig = config.WikiConfig
+			kb.WikiConfig = types.MergeWikiTaxonomy(kb.WikiConfig, config.WikiConfig) // [wiki-taxonomy-ext]
 		}
 		if config.AutoTagConfig != nil {
 			config.AutoTagConfig.Normalize()

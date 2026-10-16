@@ -39,6 +39,10 @@ func (s *wikiIngestService) planBatchTaxonomy(
 	if kb == nil {
 		return nil
 	}
+	// [wiki-taxonomy-ext] a KB with a directory template is planned by the extension.
+	if plan, handled := s.planTemplateTaxonomy(ctx, chatModel, kb, slugUpdates, lang); handled {
+		return plan
+	}
 	items := collectTaxonomyItems(slugUpdates)
 	if len(items) == 0 {
 		return nil
