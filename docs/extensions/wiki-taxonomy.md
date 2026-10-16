@@ -23,6 +23,9 @@ core is touched only by a handful of one-line hooks, each tagged
 - Only pages that have no folder yet are filed. Pages a user moved by hand are
   never touched. Renaming or moving a layout folder later does not move pages
   that are already filed: settle the layout before the first ingest.
+- A layout always **replaces** the stored one, also through upstream's PATCH
+  endpoint (`WikiTaxonomy.UnmarshalJSON`): nothing of the old layout survives
+  in the new one. `"taxonomy": null` clears it.
 - A KB update from a client that does not know about the extension (older UI,
   API, an assistant) keeps the stored layout; clearing it is explicit
   (`"taxonomy": {"roots": []}`).

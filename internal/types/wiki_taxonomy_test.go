@@ -238,3 +238,48 @@ func TestFixedPathsListParentsFirst(t *testing.T) {
 		t.Fatal("open folders must not get invented children")
 	}
 }
+
+// Upstream's PATCH endpoint decodes request sections on top of the stored value.
+// A layout must replace, not overlay: nothing from the old one may survive.
+func TestWikiTaxonomyDecodesWithReplaceSemantics(t *testing.T) {
+	stored := &WikiConfig{MaxPagesPerIngest: 4}
+	stored.Taxonomy = &WikiTaxonomy{
+		Roots:        []WikiTaxonomyNode{{Name: "Product", Open: true, Description: "old"}, {Name: "Sources"}},
+		SummaryPath:  []string{"Sources"},
+		FallbackPath: []string{"Product"},
+	}
+	shared := stored.Taxonomy
+
+	// A patch that sends a new layout without summary/fallback targets or flags.
+	patch := `{"taxonomy":{"roots":[{"name":"Docs"}]}}`
+	if err := json.Unmarshal([]byte(patch), stored); err != nil {
+		t.Fatal(err)
+	}
+	got := stored.Taxonomy
+	if len(got.Roots) != 1 || got.Roots[0].Name != "Docs" || got.Roots[0].Open || got.Roots[0].Description != "" {
+		t.Fatalf("new layout inherited old node data: %+v", got.Roots)
+	}
+	if got.SummaryPath != nil || got.FallbackPath != nil {
+		t.Fatalf("omitted targets must not survive from the old layout: %+v", got)
+	}
+	if stored.MaxPagesPerIngest != 4 {
+		t.Fatal("a patch that only carries a layout must leave the other wiki fields alone")
+	}
+	_ = shared
+
+	// A patch that does not mention the layout leaves it alone.
+	if err := json.Unmarshal([]byte(`{"max_pages_per_ingest":9}`), stored); err != nil {
+		t.Fatal(err)
+	}
+	if stored.Taxonomy == nil || len(stored.Taxonomy.Roots) != 1 || stored.MaxPagesPerIngest != 9 {
+		t.Fatalf("an unrelated patch disturbed the layout: %+v", stored)
+	}
+
+	// null clears it.
+	if err := json.Unmarshal([]byte(`{"taxonomy":null}`), stored); err != nil {
+		t.Fatal(err)
+	}
+	if stored.Taxonomy != nil {
+		t.Fatal("an explicit null must clear the layout")
+	}
+}

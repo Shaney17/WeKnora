@@ -1,6 +1,7 @@
 package types
 
 import (
+	"encoding/json"
 	"fmt"
 	"strings"
 )
@@ -45,6 +46,21 @@ type WikiTaxonomy struct {
 	// FallbackPath receives entity/concept pages the planner could not place
 	// inside the template. Empty leaves them unfiled.
 	FallbackPath []string `json:"fallback_path,omitempty" yaml:"fallback_path,omitempty"`
+}
+
+// UnmarshalJSON decodes a layout with replace semantics. encoding/json decodes
+// into whatever the destination already holds, so a PATCH-style update that
+// overlays "taxonomy" onto the stored KB would keep a stale summary_path,
+// fallback_path or "open" flag whenever the new layout omits them. A layout is
+// one unit: decoding it always starts from nothing.
+func (t *WikiTaxonomy) UnmarshalJSON(data []byte) error {
+	type plain WikiTaxonomy // no methods, so no recursion
+	var fresh plain
+	if err := json.Unmarshal(data, &fresh); err != nil {
+		return err
+	}
+	*t = WikiTaxonomy(fresh)
+	return nil
 }
 
 // WikiTaxonomyPresetInfo is a built-in template as the KB editor lists it: the
