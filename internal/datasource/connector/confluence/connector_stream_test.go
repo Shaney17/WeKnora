@@ -971,8 +971,14 @@ func TestListResourcesCloudStaysLazyWithContainerLimitation(t *testing.T) {
 						},
 					)
 				case "/wiki/api/v2/spaces/1/pages":
-					listDepths = append(listDepths, req.URL.Query().Get("depth"))
-					// depth=0 surfaces root pages only; the folder and the page nested
+					depth := req.URL.Query().Get("depth")
+					listDepths = append(listDepths, depth)
+					// Confluence Cloud validates depth as an enum; a value it does not
+					// know is a 400, which is how a numeric depth broke the picker.
+					if depth != "all" && depth != "root" {
+						return nil, errors.New("400 INVALID_REQUEST_PARAMETER: depth must be one of [all, root], got " + depth)
+					}
+					// depth=root surfaces root pages only; the folder and the page nested
 					// inside it are unreachable through this endpoint (CONFCLOUD-84275).
 					return api.jsonResponse(map[string]any{"results": []any{
 						map[string]any{"id": "top", "type": "page", "title": "Top"},
@@ -1002,8 +1008,8 @@ func TestListResourcesCloudStaysLazyWithContainerLimitation(t *testing.T) {
 	}
 	// Expanding a space must stay a single shallow call, never a whole-space
 	// scan, even though top-level folders hide some pages.
-	if len(listDepths) != 1 || listDepths[0] != "0" {
-		t.Fatalf("space expansion depths = %#v; want a single depth=0 call", listDepths)
+	if len(listDepths) != 1 || listDepths[0] != "root" {
+		t.Fatalf("space expansion depths = %#v; want a single depth=root call", listDepths)
 	}
 }
 

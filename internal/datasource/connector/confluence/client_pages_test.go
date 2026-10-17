@@ -210,6 +210,44 @@ func TestTopLevelPagesCloudSurfacesRawAPIError(t *testing.T) {
 	}
 }
 
+// Confluence Cloud validates the depth parameter of the space pages endpoint as
+// an enum ("all" or "root"). Expanding a space in the resource picker once sent
+// depth=0, which Cloud answers with 400 INVALID_REQUEST_PARAMETER, so no space
+// could be expanded. The fake enforces the same rule.
+func TestTopLevelPagesCloudSendsAnEnumDepth(t *testing.T) {
+	var depths []string
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path != "/wiki/api/v2/spaces/1/pages" {
+			http.NotFound(w, r)
+			return
+		}
+		depth := r.URL.Query().Get("depth")
+		depths = append(depths, depth)
+		w.Header().Set("Content-Type", "application/json")
+		if depth != "all" && depth != "root" {
+			w.WriteHeader(http.StatusBadRequest)
+			_, _ = w.Write([]byte(`{"errors":[{"status":400,"code":"INVALID_REQUEST_PARAMETER",` +
+				`"title":"Provided value {0} for 'depth' is not the correct type. Expected type is ContentDepth",` +
+				`"detail":"ContentDepth is one of [all, root]."}]}`))
+			return
+		}
+		_, _ = w.Write([]byte(`{"results":[{"id":"1","type":"page","title":"Root","version":{"number":1}}]}`))
+	}))
+	t.Cleanup(server.Close)
+
+	c := &client{cfg: config{baseURL: server.URL + "/wiki", edition: editionCloud}, http: server.Client()}
+	pages, err := c.topLevelPages(context.Background(), space{ID: "1", Key: "ENG", Name: "Engineering"})
+	if err != nil {
+		t.Fatalf("topLevelPages() = %v; the depth sent was %v", err, depths)
+	}
+	if len(pages) != 1 || pages[0].ID != "1" {
+		t.Fatalf("pages = %#v", pages)
+	}
+	if len(depths) != 1 || depths[0] != "root" {
+		t.Fatalf("depths = %#v; want a single depth=root request", depths)
+	}
+}
+
 func TestPagesCloudFollowsNextAndKeepsDepth(t *testing.T) {
 	var depths []string
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

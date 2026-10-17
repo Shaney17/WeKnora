@@ -633,9 +633,11 @@ func (c *client) listCloudHierarchy(ctx context.Context, endpoint string) ([]pag
 // is paginated by the server; it deliberately never falls back to scanning all
 // pages because that would defeat lazy selection for large spaces.
 //
-// Cloud applies the same lazy contract: depth=0 returns only root-level pages,
-// and Cloud exposes no endpoint to enumerate a space's top-level folders
-// (CONFCLOUD-84275), so pages nested directly under those containers stay
+// Cloud applies the same lazy contract: depth=root returns only root-level
+// pages. The v2 API accepts only "all" or "root" for depth; a numeric value
+// such as 0 is rejected with 400 INVALID_REQUEST_PARAMETER. Cloud also exposes
+// no endpoint to enumerate a space's top-level folders (CONFCLOUD-84275), so
+// pages nested directly under those containers stay
 // unselectable in the picker for now. Recovering them would require a
 // whole-space scan per expand, which is exactly what lazy loading forbids;
 // selecting the whole space still syncs them. The connector flags this
@@ -646,7 +648,7 @@ func (c *client) topLevelPages(ctx context.Context, s space) ([]page, error) {
 	if c.cfg.cloud() {
 		pages, err = c.listCloudHierarchy(
 			ctx,
-			"/api/v2/spaces/"+url.PathEscape(s.ID)+"/pages?status=current&depth=0&limit=250",
+			"/api/v2/spaces/"+url.PathEscape(s.ID)+"/pages?status=current&depth=root&limit=250",
 		)
 		if err == nil {
 			visible := pages[:0]
