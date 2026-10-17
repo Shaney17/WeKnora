@@ -30,13 +30,39 @@ core is touched only by a handful of one-line hooks, each tagged
   API, an assistant) keeps the stored layout; clearing it is explicit
   (`"taxonomy": {"roots": []}`).
 
+## Automatic quality control
+
+A KB that follows a layout also gets, with nothing to configure:
+
+1. **Built-in guidance** (`internal/types/wiki_guidance.go`), merged into the two
+   instruction channels the wiki pipeline already has. Extraction: skip people who
+   own a document, metadata, URL fragments, sample identifiers, enum values and
+   passing mentions; one canonical name, with acronyms and translations as
+   aliases. Content: entity pages say what a thing is and does and link to the
+   concept page that owns the flows; no document metadata; ignore working notes
+   ("ok", "TBD") and say so when the source marks an item removed; label sample
+   values as examples. The owner's own instructions, if any, follow these.
+2. **A curation pass** (`wiki_ingest_curate.go`) over each batch's candidates,
+   before any page is written. Rules drop URLs, host names, e-mail addresses and
+   sample identifiers such as `order_1`. One model call per 60 candidates drops
+   people/teams, metadata, enum values and passing mentions, and merges the same
+   subject under two names (a term and its acronym, or two languages), including
+   into pages that already exist. Guard rails: pages that already exist are never
+   dropped or merged away; a merge needs a known target of the same kind and no
+   cycle; the pass applies nothing if it would change more than half of a batch;
+   if it cannot tell which pages exist it does nothing.
+3. **A better folder planner:** sub-folders under an open folder are named after a
+   business capability, never after a source document or a technical word, and
+   APIs, incidents, configuration and services are classified by what they are.
+
 ## Files that belong to the extension
 
 | Area | Files |
 | --- | --- |
 | Types, validation, merge | `internal/types/wiki_taxonomy.go` (+ `_test`) |
-| Planner prompt | `internal/agent/prompts_wiki_template.go` |
-| Ingest planner | `internal/application/service/wiki_ingest_taxonomy_template.go` (+ `_test`) |
+| Planner and curation prompts | `internal/agent/prompts_wiki_template.go`, `internal/agent/prompts_wiki_curate.go` |
+| Built-in guidance | `internal/types/wiki_guidance.go` (+ `_test`) |
+| Ingest planner, curation | `internal/application/service/wiki_ingest_taxonomy_template.go`, `wiki_ingest_curate.go` (+ `_test`s) |
 | Template list endpoint | `internal/handler/wiki_taxonomy_presets.go` (+ `_test`), `internal/router/routes_wiki_taxonomy.go` |
 | Frontend | `frontend/src/extensions/wikiTaxonomy/` (editor, settings panel, API client, form helpers, messages, tests) |
 | This doc, the guard | `docs/extensions/wiki-taxonomy.md`, `scripts/check-wiki-taxonomy-ext.sh` |
@@ -53,7 +79,7 @@ These are the only edits to upstream files. If a merge drops one, re-apply it.
 | `internal/types/wiki_page.go` | 1 | Embeds `WikiTaxonomyConfig` in `WikiConfig` (JSON stays flat) |
 | `internal/types/prompt_instructions.go` | 1 | Validates the layout wherever a KB is created or updated |
 | `internal/application/service/wiki_ingest_taxonomy.go` | 1 | `planBatchTaxonomy` hands KBs with a layout to `planTemplateTaxonomy` |
-| `internal/application/service/wiki_ingest_batch.go` | 1 | Files summary pages (their branch returns before the usual placement) |
+| `internal/application/service/wiki_ingest_batch.go` | 2 | Files summary pages (their branch returns before the usual placement); adds the built-in guidance to the batch context |
 | `internal/application/service/knowledgebase.go` | 1 | Keeps the stored layout when an update omits it (`MergeWikiTaxonomy`) |
 | `internal/router/router.go` | 1 | Registers `GET /api/v1/wiki-taxonomy/presets` |
 | `frontend/src/views/knowledge/KnowledgeBaseEditorModal.vue` | 7 | import, settings panel, initial state, load, adopt-preset, create and update payloads |

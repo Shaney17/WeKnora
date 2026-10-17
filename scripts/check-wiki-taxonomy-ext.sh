@@ -29,7 +29,7 @@ hooks=(
   "internal/types/wiki_page.go:1"
   "internal/types/prompt_instructions.go:1"
   "internal/application/service/wiki_ingest_taxonomy.go:1"
-  "internal/application/service/wiki_ingest_batch.go:1"
+  "internal/application/service/wiki_ingest_batch.go:2"
   "internal/application/service/knowledgebase.go:1"
   "internal/router/router.go:1"
   "frontend/src/views/knowledge/KnowledgeBaseEditorModal.vue:7"
@@ -40,6 +40,11 @@ owned=(
   "internal/types/wiki_taxonomy.go"
   "internal/types/wiki_taxonomy_test.go"
   "internal/agent/prompts_wiki_template.go"
+  "internal/agent/prompts_wiki_curate.go"
+  "internal/types/wiki_guidance.go"
+  "internal/types/wiki_guidance_test.go"
+  "internal/application/service/wiki_ingest_curate.go"
+  "internal/application/service/wiki_ingest_curate_test.go"
   "internal/application/service/wiki_ingest_taxonomy_template.go"
   "internal/application/service/wiki_ingest_taxonomy_template_test.go"
   "internal/handler/wiki_taxonomy_presets.go"
@@ -94,7 +99,7 @@ if [ "$run_tests" -eq 1 ]; then
   echo "== go tests"
   go test ./internal/types/ ./internal/handler/ ./internal/router/ ./internal/agent/ \
     && go test ./internal/application/service/ \
-         -run 'Taxonomy|SeedTaxonomy|FileSummary|ApplyPlannedFolder|PlanTemplate'
+         -run 'Taxonomy|SeedTaxonomy|FileSummary|ApplyPlannedFolder|PlanTemplate|Curat|HeuristicJunk|ParseCuration|CoreBatchContext|CoreTaxonomyHook'
   echo "== frontend"
   (cd frontend && npx tsx --test src/extensions/wikiTaxonomy/*.test.ts && npx vue-tsc --noEmit -p tsconfig.app.json)
 fi

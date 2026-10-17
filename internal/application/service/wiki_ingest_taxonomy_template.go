@@ -49,6 +49,10 @@ func (s *wikiIngestService) planTemplateTaxonomy(
 		return nil, false
 	}
 
+	// Quality pass first, so the planner only files subjects that will get a
+	// page. It edits slugUpdates in place: the reduce phase iterates the same map.
+	s.curateCandidates(ctx, kb, slugUpdates, s.curationCallerFor(chatModel))
+
 	// Existing folders anchor reuse under [open] folders. A failed lookup only
 	// means the planner sees the template alone.
 	var pool [][]string
@@ -104,8 +108,9 @@ func (s *wikiIngestService) planTemplateChunks(
 		for _, it := range chunk {
 			fmt.Fprintf(&itemsBlock, "- slug: %s | title: %s | type: %s | about: %s",
 				it.slug, it.title, it.pageType, previewText(it.about, 120))
-			// The source document's title is a strong hint for which side of a
-			// template (business vs engineering) an item belongs to.
+			// The source document's title hints at which side of a template
+			// (business vs engineering) an item belongs to. The prompt forbids
+			// naming folders after it.
 			if doc := strings.TrimSpace(docTitles[it.slug]); doc != "" {
 				fmt.Fprintf(&itemsBlock, " | source: %s", previewText(doc, 80))
 			}

@@ -240,6 +240,7 @@ func (s *wikiIngestService) newWikiBatchContext(
 		granularity = wikiConfig.ExtractionGranularity.Normalize()
 		contentInstructions = wikiConfig.ContentInstructions
 		extractionInstructions = wikiConfig.ExtractionInstructions
+		contentInstructions, extractionInstructions = types.WithWikiTaxonomyGuidance(wikiConfig, contentInstructions, extractionInstructions) // [wiki-taxonomy-ext] built-in quality guidance
 	}
 	return &WikiBatchContext{
 		SlugTitle: func(ctx context.Context, slug string) string {

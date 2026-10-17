@@ -18,6 +18,26 @@ type folderRecorder struct {
 	interfaces.WikiPageService
 	created [][]string
 	failOn  string
+
+	// Existing wiki content, for the curation pass.
+	live      map[string]bool
+	existing  map[string][]types.WikiIndexEntry // by page type
+	existsErr error
+}
+
+func (f *folderRecorder) ExistsSlugs(_ context.Context, _ string, slugs []string) (map[string]bool, error) {
+	if f.existsErr != nil {
+		return nil, f.existsErr
+	}
+	out := make(map[string]bool, len(slugs))
+	for _, s := range slugs {
+		out[s] = f.live[s]
+	}
+	return out, nil
+}
+
+func (f *folderRecorder) ListByTypeRecent(_ context.Context, _ string, pageType string, _ int) ([]types.WikiIndexEntry, error) {
+	return f.existing[pageType], nil
 }
 
 func (f *folderRecorder) FindOrCreateFolderPath(
