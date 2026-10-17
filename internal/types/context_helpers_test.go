@@ -67,6 +67,10 @@ func TestLanguageLocaleName(t *testing.T) {
 		{"Russian ru-RU", "ru-RU", "Russian"},
 		{"Russian ru", "ru", "Russian"},
 
+		// Vietnamese
+		{"Vietnamese vi-VN", "vi-VN", "Vietnamese"},
+		{"Vietnamese vi", "vi", "Vietnamese"},
+
 		// French
 		{"French fr-FR", "fr-FR", "French"},
 		{"French fr", "fr", "French"},
